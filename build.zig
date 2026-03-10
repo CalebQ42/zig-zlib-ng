@@ -3,7 +3,7 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const pic = b.option(bool, "pie", "Produce Position Independent Code");
     const prefix = b.option([]const u8, "prefix", "Prefix to use for symbols. Defaults to \"zng_\".") orelse "zng_";
-    const lib_optimizations = b.option(bool, "enable_optimizations", "Enable architecture specific optimizations. Defaults to true.") orelse true;
+    const disable_optimizations = b.option(bool, "disable_optimizations", "Disable architecture specific optimizations.") orelse false;
     const upstream = b.dependency("zlib_ng", .{});
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -17,38 +17,63 @@ pub fn build(b: *std.Build) void {
             .pic = pic,
         }),
     });
-    const base_flags: []const []const u8 = &.{
-        "-Wno-implicit-function-declaration",
+    var flags: []const []const u8 = &.{
+        // "-Wno-implicit-function-declaration",
         if (optimize == .Debug) "-DZLIB_DEBUG" else "-DNDEBUG",
-        "-DHAVE_SYMVER",
-        "-D_LARGEFILE64_SOURCE=1",
-        "-DHAVE_CPUID_GNU",
-        "-DHAVE_SYS_AUXV_H",
-        "-DHAVE_LINUX_AUXVEC_H",
-        "-DHAVE_VISIBILITY_HIDDEN",
-        "-DHAVE_VISIBILITY_INTERNAL",
-        "-DHAVE_ATTRIBUTE_ALIGNED",
-        "-DHAVE_BUILTIN_ASSUME_ALIGNED",
-        "-DWITH_ALL_FALLBACKS",
-        "-DWITH_OPTIM",
+        "-DWITH_ALL_FALLBACKS", // TODO: check if needed.
         "-DWITH_GZFILEOP=OFF", // This causes some issues if enabled ATM.
-        "-DX86_FEATURES",
-        "-DX86_HAVE_XSAVE_INTRIN",
     };
+    if (target.result.os.tag != .macos) flags = flags ++ &.{"-DHAVE_SYMVER"};
+    if (pic) flags = flags ++ &.{"-fPIC"};
 
-    const flags = if (lib_optimizations) {
+    if (!disable_optimizations) {
+        flags = flags ++ &.{"-DWITH_OPTIM"};
         switch (target.result.cpu.arch) {
-            .x86, .x86_64 => blk: {
-                var flags = base_flags;
-                if (pic == true) flags = flags ++ &.{"-fPIC"};
-
-                break :blk flags;
+            .x86, .x86_64 => flags = flags ++ blk: {
+                var optim_flags: []const []const u8 = &.{"-DX86_FEATURES"};
+                const feature_set = std.Target.x86.Feature;
+                const features = target.result.cpu.features;
+                if (features.isEnabled(feature_set.xsave))
+                    optim_flags = optim_flags ++ &.{"-DX86_HAVE_XSAVE_INTRIN"};
+                if (features.isEnabled(feature_set.sse2))
+                    optim_flags = optim_flags ++ &.{"-DX86_SSE2"};
+                if (features.isEnabled(feature_set.ssse3))
+                    optim_flags = optim_flags ++ &.{"-DX86_SSSE3"};
+                if (features.isEnabled(feature_set.sse4_1))
+                    optim_flags = optim_flags ++ &.{"-DX86_SSE41"};
+                if (features.isEnabled(feature_set.sse4_2))
+                    optim_flags = optim_flags ++ &.{"-DX86_SSE42"};
+                if (features.isEnabled(feature_set.pclmul))
+                    optim_flags = optim_flags ++ &.{"-DX86_PCLMULQDQ_CRC"};
+                if (features.isEnabled(feature_set.avx2))
+                    optim_flags = optim_flags ++ &.{"-DX86_AVX2"};
+                if (features.isEnabled(feature_set.avx2))
+                    optim_flags = optim_flags ++ &.{"-DX86_AVX2"};
+                if (features.isEnabled(feature_set.avx512f)) // This might be the wrong feature flag...
+                    optim_flags = optim_flags ++ &.{"-DX86_AVX512"};
+                if (features.isEnabled(feature_set.avx512vnni))
+                    optim_flags = optim_flags ++ &.{"-DX86_AVX512VNNI"};
+                if (features.isEnabled(feature_set.vpclmulqdq)) {
+                    if (features.isEnabled(feature_set.avx2))
+                        optim_flags = optim_flags ++ &.{"-DX86_VPCLMULQDQ_AVX2"};
+                    if (features.isEnabled(feature_set.avx512f)) // This might be the wrong feature flag...
+                        optim_flags = optim_flags ++ &.{"-DX86_VPCLMULQDQ_AVX512"};
+                }
+                break :blk optim_flags;
             },
-            .loongarch32, .loongarch64 => blk: {},
+            .arm, .aarch64 => blk: {
+                var optim_flags: []const []const u8 = &.{"-DARM_FEATURES"};
+                const feature_set = std.Target.arm.Feature;
+                const features = target.result.cpu.features;
+                if (features.isEnabled(feature_set.neon))
+                    optim_flags = optim_flags ++ &.{"-DARM_NEON"};
 
-            else => base_flags,
+                break :blk optim_flags;
+            },
+
+            else => flags,
         }
-    } else if (pic == true) base_flags ++ &.{"-fPIC"} else base_flags;
+    } else if (pic == true) flags ++ &.{"-fPIC"} else flags;
     zlib_lib.root_module.addCSourceFiles(.{
         .flags = flags,
         .root = upstream.path(""),
