@@ -1,0 +1,17 @@
+.{
+    .name = .zlib,
+    .version = "2.3.3",
+    .minimum_zig_version = "0.15.2",
+    .dependencies = .{
+        .zlib_ng = .{
+            .url = "https://github.com/zlib-ng/zlib-ng/archive/refs/tags/2.3.3.tar.gz",
+            .hash = "N-V-__8AAPaJcABkB6U-96R7h2xuXX5TlDMvwPbE4PucPI59",
+        },
+    },
+    .paths = .{
+        "LICENSE",
+        "README.md",
+        "build.zig",
+        "build.zig.zon",
+    },
+}
