@@ -2,6 +2,7 @@
     .name = .zlib,
     .version = "2.3.3",
     .minimum_zig_version = "0.15.2",
+    .fingerprint = 0x73887d3af2255134,
     .dependencies = .{
         .zlib_ng = .{
             .url = "https://github.com/zlib-ng/zlib-ng/archive/refs/tags/2.3.3.tar.gz",
