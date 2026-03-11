@@ -316,4 +316,5 @@ pub fn build(b: *std.Build) !void {
         },
         else => {},
     }
+    b.installArtifact(zlib_lib);
 }
