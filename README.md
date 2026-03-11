@@ -13,7 +13,7 @@ zig fetch --save https://github.com/CalebQ42/zig-zlib-ng/archive/refs/tags/2.3.3
 Next, add this snippet to your `build.zig` script:
 
 ```zig
-const zlib_ng_dep = b.dependency("zlib-ng", .{
+const zlib_ng_dep = b.dependency("zlib_ng", .{
     .target = target,
     .optimize = optimize,
 });

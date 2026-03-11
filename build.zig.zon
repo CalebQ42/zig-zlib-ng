@@ -1,5 +1,5 @@
 .{
-    .name = .zlib,
+    .name = .zlib_ng,
     .version = "2.3.3",
     .minimum_zig_version = "0.15.2",
     .fingerprint = 0x73887d3af2255134,
