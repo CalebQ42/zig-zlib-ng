@@ -49,14 +49,14 @@ pub fn build(b: *std.Build) void {
                     optim_flags = optim_flags ++ &.{"-DX86_AVX2"};
                 if (features.isEnabled(feature_set.avx2))
                     optim_flags = optim_flags ++ &.{"-DX86_AVX2"};
-                if (features.isEnabled(feature_set.avx512f)) // This might be the wrong feature flag...
+                if (features.isEnabled(feature_set.avx512f))
                     optim_flags = optim_flags ++ &.{"-DX86_AVX512"};
                 if (features.isEnabled(feature_set.avx512vnni))
                     optim_flags = optim_flags ++ &.{"-DX86_AVX512VNNI"};
                 if (features.isEnabled(feature_set.vpclmulqdq)) {
                     if (features.isEnabled(feature_set.avx2))
                         optim_flags = optim_flags ++ &.{"-DX86_VPCLMULQDQ_AVX2"};
-                    if (features.isEnabled(feature_set.avx512f)) // This might be the wrong feature flag...
+                    if (features.isEnabled(feature_set.avx512f))
                         optim_flags = optim_flags ++ &.{"-DX86_VPCLMULQDQ_AVX512"};
                 }
                 break :blk optim_flags;
@@ -65,10 +65,46 @@ pub fn build(b: *std.Build) void {
                 var optim_flags: []const []const u8 = &.{"-DARM_FEATURES"};
                 const feature_set = std.Target.arm.Feature;
                 const features = target.result.cpu.features;
-                if (features.isEnabled(feature_set.neon))
+                // TODO: Properly check if arm_acle.h is present.
+                optim_flags = optim_flags ++ &.{"-DHAVE_ARM_ACLE_H"};
+                if (features.isEnabled(feature_set.neon)) {
                     optim_flags = optim_flags ++ &.{"-DARM_NEON"};
-
+                    // TODO: Properly check for NEON LD4 support.
+                    optim_flags = optim_flags ++ &.{"-DARM_NEON_HASLD4"};
+                }
+                // I'm not sure if this is the correct flags
+                if (features.isEnabled(feature_set.v6) or features.isEnabled(feature_set.has_v6)) {
+                    optim_flags = optim_flags ++ &.{"-DARM_SIMD"};
+                    if (features.isEnabled(feature_set.v6))
+                        optim_flags = optim_flags ++ &.{"-DARM_SIMD_INTRIN"};
+                }
+                // I'm not sure if this is the correct flags
+                if (features.isEnabled(feature_set.has_v8)) {
+                    optim_flags = optim_flags ++ &.{"-DARM_CRC32"};
+                    if (features.isEnabled(feature_set.crc))
+                        optim_flags = optim_flags ++ &.{"-DARM_CRC32_INTRIN"};
+                    // I'm not sure if this is the correct flags
+                    if (features.isEnabled(feature_set.neon))
+                        optim_flags = optim_flags ++ &.{"-DARM_PMULL_EOR3"};
+                }
                 break :blk optim_flags;
+            },
+            .powerpc, .powerpc64, .powerpcle, .powerpc64le => blk: {
+                var optim_flags: []const []const u8 = &.{"-DPPC_FEATURES"};
+                const feature_set = std.Target.powerpc.Feature;
+                const features = target.result.cpu.features;
+                if (features.isEnabled(feature_set.altivec))
+                    optim_flags = optim_flags ++ &.{"-DPPC_VMX"};
+                if (features.isEnabled(feature_set.power8_altivec))
+                    optim_flags = optim_flags ++ &.{ "-DPOWER8_VSX", "-DPOWER_FEATURES" };
+                if (features.isEnabled(feature_set.power9_altivec))
+                    optim_flags = optim_flags ++ &.{ "-DPOWER9", "-DPOWER_FEATURES" };
+                break :blk optim_flags;
+            },
+            .riscv64 => blk: {
+                var optim_flags: []const []const u8 = &.{"-DRISCV_FEATURES"};
+                const feature_set = std.Target.powerpc.Feature;
+                const features = target.result.cpu.features;
             },
 
             else => flags,
