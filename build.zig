@@ -18,10 +18,10 @@ pub fn build(b: *std.Build) !void {
         }),
     });
 
-    var flags: std.ArrayList([]const u8) = try .initCapacity(b.allocator, 3);
+    var flags: std.ArrayList([]const u8) = try .initCapacity(b.allocator, 4);
     defer flags.deinit(b.allocator);
     flags.appendSliceAssumeCapacity(&.{
-        // "-Wno-implicit-function-declaration",
+        "-Wno-implicit-function-declaration",
         if (optimize == .Debug) "-DZLIB_DEBUG" else "-DNDEBUG",
         "-DWITH_ALL_FALLBACKS", // TODO: check if needed.
         "-DWITH_GZFILEOP=OFF", // This causes some issues if enabled ATM.
