@@ -19,11 +19,11 @@ pub fn build(b: *std.Build) !void {
         }),
     });
 
-    var flags: std.ArrayList([]const u8) = try .initCapacity(b.allocator, 15);
+    var flags: std.ArrayList([]const u8) = try .initCapacity(b.allocator, 30);
     defer flags.deinit(b.allocator);
     flags.appendSliceAssumeCapacity(&.{
         "-std=c11",
-        "-Wno-implicit-function-declaration",
+        "-fno-semantic-interposition",
         if (optimize == .Debug) "-DZLIB_DEBUG" else "-DNDEBUG",
         "-DWITH_ALL_FALLBACKS", // TODO: check if needed.
         "-DWITH_GZFILEOP=OFF", // This causes some issues if enabled ATM.
@@ -34,7 +34,12 @@ pub fn build(b: *std.Build) !void {
         "-DHAVE_ATTRIBUTE_ALIGNED",
         "-DHAVE_BUILTIN_ASSUME_ALIGNED",
         "-DHAVE_BUILTIN_CTZLL",
+        "-DHAVE_CPUID_GNU",
+        "-D_LARGEFILE64_SOURCE=1",
     });
+    // TODO: Check for linux/auxvec.h and sys/auxv.h
+    if (target.result.os.tag == .linux)
+        try flags.appendSlice(b.allocator, &.{ "-DHAVE_LINUX_AUXVEC_H", "-DHAVE_SYS_AUXV_H" });
     if (target.result.os.tag != .macos) try flags.append(b.allocator, "-DHAVE_SYMVER");
     if (pic != false) try flags.append(b.allocator, "-fPIC");
     if (reduce_memory) try flags.appendSlice(b.allocator, &.{ "-DHASH_SIZE=32768u", "-DGZBUFSIZE=8192", "-DNO_LIT_MEM" });
@@ -46,6 +51,7 @@ pub fn build(b: *std.Build) !void {
                 try flags.append(b.allocator, "-DX86_FEATURES");
                 const feature_set = std.Target.x86.Feature;
                 const features = target.result.cpu.features;
+                // This seems to require -DHAVE_CPUID_GNU to work properly.
                 if (features.isEnabled(@intFromEnum(feature_set.xsave)))
                     try flags.append(b.allocator, "-DX86_HAVE_XSAVE_INTRIN");
                 if (features.isEnabled(@intFromEnum(feature_set.sse2)))
