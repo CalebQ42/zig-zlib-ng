@@ -4,6 +4,7 @@ pub fn build(b: *std.Build) !void {
     const pic = b.option(bool, "pic", "Produce Position Independent Code");
     const prefix = b.option([]const u8, "prefix", "Prefix to use for symbols. Defaults to \"zng_\".") orelse "zng_";
     const disable_optimizations = b.option(bool, "disable_optimizations", "Disable architecture specific optimizations.") orelse false;
+    const reduce_memory = b.option(bool, "reduce_memory", "Compile for a reduced memory footprint at the cost of performance") orelse false;
     const upstream = b.dependency("zlib_ng", .{});
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -18,16 +19,25 @@ pub fn build(b: *std.Build) !void {
         }),
     });
 
-    var flags: std.ArrayList([]const u8) = try .initCapacity(b.allocator, 4);
+    var flags: std.ArrayList([]const u8) = try .initCapacity(b.allocator, 15);
     defer flags.deinit(b.allocator);
     flags.appendSliceAssumeCapacity(&.{
+        "-std=c11",
         "-Wno-implicit-function-declaration",
         if (optimize == .Debug) "-DZLIB_DEBUG" else "-DNDEBUG",
         "-DWITH_ALL_FALLBACKS", // TODO: check if needed.
         "-DWITH_GZFILEOP=OFF", // This causes some issues if enabled ATM.
+        // TODO: Double check all of the below are fully supported.
+        "-DHAVE_BUILTIN_CTZ",
+        "-DHAVE_VISIBILITY_HIDDEN",
+        "-DHAVE_VISIBILITY_INTERNAL",
+        "-DHAVE_ATTRIBUTE_ALIGNED",
+        "-DHAVE_BUILTIN_ASSUME_ALIGNED",
+        "-DHAVE_BUILTIN_CTZLL",
     });
     if (target.result.os.tag != .macos) try flags.append(b.allocator, "-DHAVE_SYMVER");
     if (pic != false) try flags.append(b.allocator, "-fPIC");
+    if (reduce_memory) try flags.appendSlice(b.allocator, &.{ "-DHASH_SIZE=32768u", "-DGZBUFSIZE=8192", "-DNO_LIT_MEM" });
 
     if (!disable_optimizations) {
         try flags.append(b.allocator, "-DWITH_OPTIM");
