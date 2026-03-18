@@ -2,7 +2,7 @@ const std = @import("std");
 
 pub fn build(b: *std.Build) !void {
     const pic = b.option(bool, "pic", "Produce Position Independent Code");
-    const prefix = b.option([]const u8, "prefix", "Prefix to use for symbols. Defaults to \"zng_\".") orelse "zng_";
+    const prefix = b.option([]const u8, "prefix", "Prefix to use for symbols.") orelse "";
     const disable_optimizations = b.option(bool, "disable_optimizations", "Disable architecture specific optimizations.") orelse false;
     const reduce_memory = b.option(bool, "reduce_memory", "Compile for a reduced memory footprint at the cost of performance") orelse false;
     const upstream = b.dependency("zlib_ng", .{});
