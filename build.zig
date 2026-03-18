@@ -194,21 +194,28 @@ pub fn build(b: *std.Build) !void {
         "zlib-ng.h.in",
     };
     for (autoconf_headers) |path| {
-        zlib_lib.root_module.addConfigHeader(b.addConfigHeader(.{
+        var cfg_hdr = b.addConfigHeader(.{
             .include_path = path[0 .. path.len - 3],
             .style = .{ .autoconf_at = upstream.path(path) },
         }, .{
             .ZLIB_SYMBOL_PREFIX = prefix,
-        }));
+        });
+        zlib_lib.root_module.addConfigHeader(cfg_hdr);
+        zlib_lib.installHeader(cfg_hdr.getOutputFile(), path[0 .. path.len - 3]);
     }
-    zlib_lib.root_module.addConfigHeader(b.addConfigHeader(.{
+    var zconf_hdr = b.addConfigHeader(.{
         .include_path = "zconf.h",
         .style = .{ .autoconf_at = upstream.path("zconf.h.in") },
-    }, .{}));
-    zlib_lib.root_module.addConfigHeader(b.addConfigHeader(.{
+    }, .{});
+    zlib_lib.root_module.addConfigHeader(zconf_hdr);
+    zlib_lib.installHeader(zconf_hdr.getOutputFile(), "zconf.h");
+
+    var zconf_ng_hdr = b.addConfigHeader(.{
         .include_path = "zconf-ng.h",
         .style = .{ .autoconf_at = upstream.path("zconf-ng.h.in") },
-    }, .{}));
+    }, .{});
+    zlib_lib.root_module.addConfigHeader(zconf_ng_hdr);
+    zlib_lib.installHeader(zconf_ng_hdr.getOutputFile(), "zconf-ng.h");
 
     // Some /arch files use header files from root path.
     zlib_lib.root_module.addIncludePath(upstream.path(""));
