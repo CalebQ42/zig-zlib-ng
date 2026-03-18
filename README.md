@@ -21,3 +21,7 @@ your_compilation.linkLibrary(zlib_ng_dep.artifact("zng"));
 ```
 
 This will provide zlib-ng as a static library to `your_compilation`.
+
+## Current State
+
+Currently *most* optimization flags have been ported over, but some may be improperly added, needs to have more restrictions on when they are added, or be tested on if they *can* be added properly. Additionally, I only have limited hardware to actually test everything on (Linux x86_64) so flags for other platforms/architectures are untested.
