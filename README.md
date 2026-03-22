@@ -7,7 +7,7 @@
 First, update your `build.zig.zon`:
 
 ```
-zig fetch --save https://github.com/CalebQ42/zig-zlib-ng/archive/refs/tags/2.3.3.tar.gz
+zig fetch --save git+https://github.com/CalebQ42/zig-zlib-ng.git
 ```
 
 Next, add this snippet to your `build.zig` script:
