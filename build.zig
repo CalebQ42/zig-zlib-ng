@@ -5,6 +5,7 @@ pub fn build(b: *std.Build) !void {
     const prefix = b.option([]const u8, "prefix", "Prefix to use for symbols.") orelse "";
     const disable_optimizations = b.option(bool, "disable_optimizations", "Disable architecture specific optimizations.") orelse false;
     const reduce_memory = b.option(bool, "reduce_memory", "Compile for a reduced memory footprint at the cost of performance") orelse false;
+    const zlib_compat = b.option(bool, "zlib_compat", "Compile with zlib compatibility") orelse false;
     const upstream = b.dependency("zlib_ng", .{});
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -37,6 +38,9 @@ pub fn build(b: *std.Build) !void {
         "-DHAVE_CPUID_GNU",
         "-D_LARGEFILE64_SOURCE=1",
     });
+    if(zlib_compat)
+        try flags.append(b.allocator, "-DZLIB_COMPAT=ON");
+
     // TODO: Check for linux/auxvec.h and sys/auxv.h
     if (target.result.os.tag == .linux)
         try flags.appendSlice(b.allocator, &.{ "-DHAVE_LINUX_AUXVEC_H", "-DHAVE_SYS_AUXV_H" });
