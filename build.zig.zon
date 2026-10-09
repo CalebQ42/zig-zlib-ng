@@ -1,7 +1,7 @@
 .{
     .name = .zlib_ng,
-    .version = "2.3.3-pre1",
-    .minimum_zig_version = "0.15.2",
+    .version = "2.3.3-pre2",
+    .minimum_zig_version = "0.17.0",
     .fingerprint = 0xe0076ed1e01276d8,
     .dependencies = .{
         .zlib_ng = .{

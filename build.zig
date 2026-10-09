@@ -25,7 +25,7 @@ pub fn build(b: *std.Build) !void {
     flags.appendSliceAssumeCapacity(&.{
         "-std=c11",
         "-fno-semantic-interposition",
-        if (optimize == .Debug) "-DZLIB_DEBUG" else "-DNDEBUG",
+        if (optimize == .debug) "-DZLIB_DEBUG" else "-DNDEBUG",
         "-DWITH_ALL_FALLBACKS", // TODO: check if needed.
         "-DWITH_GZFILEOP=OFF", // This causes some issues if enabled ATM.
         // TODO: Double check all of the below are fully supported.
@@ -38,7 +38,7 @@ pub fn build(b: *std.Build) !void {
         "-DHAVE_CPUID_GNU",
         "-D_LARGEFILE64_SOURCE=1",
     });
-    if(zlib_compat)
+    if (zlib_compat)
         try flags.append(b.allocator, "-DZLIB_COMPAT=ON");
 
     // TODO: Check for linux/auxvec.h and sys/auxv.h
@@ -56,31 +56,31 @@ pub fn build(b: *std.Build) !void {
                 const feature_set = std.Target.x86.Feature;
                 const features = target.result.cpu.features;
                 // This seems to require -DHAVE_CPUID_GNU to work properly.
-                if (features.isEnabled(@intFromEnum(feature_set.xsave)))
+                if (features.isEnabled(@backingInt(feature_set.xsave)))
                     try flags.append(b.allocator, "-DX86_HAVE_XSAVE_INTRIN");
-                if (features.isEnabled(@intFromEnum(feature_set.sse2)))
+                if (features.isEnabled(@backingInt(feature_set.sse2)))
                     try flags.append(b.allocator, "-DX86_SSE2");
-                if (features.isEnabled(@intFromEnum(feature_set.ssse3)))
+                if (features.isEnabled(@backingInt(feature_set.ssse3)))
                     try flags.append(b.allocator, "-DX86_SSSE3");
-                if (features.isEnabled(@intFromEnum(feature_set.sse4_1)))
+                if (features.isEnabled(@backingInt(feature_set.sse4_1)))
                     try flags.append(b.allocator, "-DX86_SSE41");
-                if (features.isEnabled(@intFromEnum(feature_set.sse4_2)))
+                if (features.isEnabled(@backingInt(feature_set.sse4_2)))
                     try flags.append(b.allocator, "-DX86_SSE42");
-                if (features.isEnabled(@intFromEnum(feature_set.pclmul)))
+                if (features.isEnabled(@backingInt(feature_set.pclmul)))
                     try flags.append(b.allocator, "-DX86_PCLMULQDQ_CRC");
-                if (features.isEnabled(@intFromEnum(feature_set.avx2)))
+                if (features.isEnabled(@backingInt(feature_set.avx2)))
                     try flags.append(b.allocator, "-DX86_AVX2");
-                if (features.isEnabled(@intFromEnum(feature_set.avx2)))
+                if (features.isEnabled(@backingInt(feature_set.avx2)))
                     try flags.append(b.allocator, "-DX86_AVX2");
                 // This may not be the correct feature flag.
-                if (features.isEnabled(@intFromEnum(feature_set.avx512f)))
+                if (features.isEnabled(@backingInt(feature_set.avx512f)))
                     try flags.append(b.allocator, "-DX86_AVX512");
-                if (features.isEnabled(@intFromEnum(feature_set.avx512vnni)))
+                if (features.isEnabled(@backingInt(feature_set.avx512vnni)))
                     try flags.append(b.allocator, "-DX86_AVX512VNNI");
-                if (features.isEnabled(@intFromEnum(feature_set.vpclmulqdq))) {
-                    if (features.isEnabled(@intFromEnum(feature_set.avx2)))
+                if (features.isEnabled(@backingInt(feature_set.vpclmulqdq))) {
+                    if (features.isEnabled(@backingInt(feature_set.avx2)))
                         try flags.append(b.allocator, "-DX86_VPCLMULQDQ_AVX2");
-                    if (features.isEnabled(@intFromEnum(feature_set.avx512f)))
+                    if (features.isEnabled(@backingInt(feature_set.avx512f)))
                         try flags.append(b.allocator, "-DX86_VPCLMULQDQ_AVX512");
                 }
             },
@@ -91,23 +91,23 @@ pub fn build(b: *std.Build) !void {
                 const features = target.result.cpu.features;
                 // TODO: Check if arm_acle.h is present.
                 // try flags.append(b.allocator,"-DHAVE_ARM_ACLE_H");
-                if (features.isEnabled(@intFromEnum(feature_set.neon))) {
+                if (features.isEnabled(@backingInt(feature_set.neon))) {
                     try flags.append(b.allocator, "-DARM_NEON");
                     // TODO: Check for NEON LD4 support.
                     try flags.append(b.allocator, "-DARM_NEON_HASLD4");
                 }
-                if (features.isEnabled(@intFromEnum(feature_set.v6)) or features.isEnabled(@intFromEnum(feature_set.has_v6))) {
+                if (features.isEnabled(@backingInt(feature_set.v6)) or features.isEnabled(@backingInt(feature_set.has_v6))) {
                     try flags.append(b.allocator, "-DARM_SIMD");
-                    if (features.isEnabled(@intFromEnum(feature_set.v6)))
+                    if (features.isEnabled(@backingInt(feature_set.v6)))
                         try flags.append(b.allocator, "-DARM_SIMD_INTRIN");
                 }
                 // I'm not sure if this is the correct flags
-                if (features.isEnabled(@intFromEnum(feature_set.has_v8))) {
+                if (features.isEnabled(@backingInt(feature_set.has_v8))) {
                     try flags.append(b.allocator, "-DARM_CRC32");
-                    if (features.isEnabled(@intFromEnum(feature_set.crc)))
+                    if (features.isEnabled(@backingInt(feature_set.crc)))
                         try flags.append(b.allocator, "-DARM_CRC32_INTRIN");
                     // I'm not sure if this is the correct flag for this feature.
-                    if (features.isEnabled(@intFromEnum(feature_set.neon)))
+                    if (features.isEnabled(@backingInt(feature_set.neon)))
                         try flags.append(b.allocator, "-DARM_PMULL_EOR3");
                 }
             },
@@ -115,11 +115,11 @@ pub fn build(b: *std.Build) !void {
                 try flags.append(b.allocator, "-DPPC_FEATURES");
                 const feature_set = std.Target.powerpc.Feature;
                 const features = target.result.cpu.features;
-                if (features.isEnabled(@intFromEnum(feature_set.altivec)))
+                if (features.isEnabled(@backingInt(feature_set.altivec)))
                     try flags.append(b.allocator, "-DPPC_VMX");
-                if (features.isEnabled(@intFromEnum(feature_set.power8_altivec)))
+                if (features.isEnabled(@backingInt(feature_set.power8_altivec)))
                     try flags.appendSlice(b.allocator, &.{ "-DPOWER8_VSX", "-DPOWER_FEATURES" });
-                if (features.isEnabled(@intFromEnum(feature_set.power9_altivec)))
+                if (features.isEnabled(@backingInt(feature_set.power9_altivec)))
                     try flags.appendSlice(b.allocator, &.{ "-DPOWER9", "-DPOWER_FEATURES" });
             },
             .riscv64 => {
@@ -130,14 +130,14 @@ pub fn build(b: *std.Build) !void {
                 // try flags.append(b.allocator,"-DHAVE_ASM_HWPROBE_H");
                 // TODO: Check for rvv features
                 // try flags.append(b.allocator,"-DRIScV_RVV");
-                if (features.isEnabled(@intFromEnum(feature_set.zbc)))
+                if (features.isEnabled(@backingInt(feature_set.zbc)))
                     try flags.append(b.allocator, "-DRISCV_CRC32_ZBC");
             },
             .s390x => {
                 try flags.append(b.allocator, "-DS390_FEATURES");
                 const feature_set = std.Target.s390x.Feature;
                 const features = target.result.cpu.features;
-                if (features.isEnabled(@intFromEnum(feature_set.deflate_conversion)))
+                if (features.isEnabled(@backingInt(feature_set.deflate_conversion)))
                     try flags.append(b.allocator, "-DS390_DFLTCC_DEFLATE");
                 // TODO: Check for DFLTCC_INFLATE support
                 // try flags.append(b.allocator,"-DS390_DFLTCC_INFLATE");
@@ -150,9 +150,9 @@ pub fn build(b: *std.Build) !void {
                 const features = target.result.cpu.features;
                 // TODO: Check for la64 support
                 // try flags.append(b.allocator,"-DLOONGARCH_CRC");
-                if (features.isEnabled(@intFromEnum(feature_set.lsx)))
+                if (features.isEnabled(@backingInt(feature_set.lsx)))
                     try flags.append(b.allocator, "-DLOONGARCH_LSX");
-                if (features.isEnabled(@intFromEnum(feature_set.lasx)))
+                if (features.isEnabled(@backingInt(feature_set.lasx)))
                     try flags.append(b.allocator, "-DLOONGARCH_LASX");
             },
             else => {},
